@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     def validate_production(self):
         if self.app_env != 'production':
             return
-        if not self.database_url.startswith('postgresql'):
+        if not self.database_url.startswith(('postgresql://', 'postgresql+psycopg://', 'postgres://')):
             raise ValueError('Production requires PostgreSQL')
         if not self.public_base_url.startswith('https://'):
             raise ValueError('Production requires HTTPS PUBLIC_BASE_URL')

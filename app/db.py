@@ -7,6 +7,8 @@ class Base(DeclarativeBase):
 
 
 def database(url):
+    if url.startswith('postgres://'):
+        url = 'postgresql://' + url[len('postgres://'):]
     if url.startswith('postgresql://'):
         url = url.replace('postgresql://', 'postgresql+psycopg://', 1)
     engine = create_engine(url, pool_pre_ping=True,

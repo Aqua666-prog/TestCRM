@@ -33,7 +33,19 @@ python -m pytest -q
 
 Команды бота: `/start` и `/new` начинают новую заявку (сбрасывая незавершённую), `/cancel` отменяет. Сообщение без активного диалога вызывает вопрос об имени; затем нужно ответить на три вопроса. В контактном шаге поддерживается объект Telegram contact. Группы и обновления без сообщения игнорируются. Бот никогда не считает username пользователя автоматически подтверждённым контактом.
 
-## Production: сервер + Docker Compose
+## Production: Railway (выбранный хостинг)
+
+Railway-конфигурация находится в `railway.json`: сборка Dockerfile, один процесс, health `/health`, перезапуск при сбое. `python -m app.run` слушает выделенный платформой `PORT`. PostgreSQL URL в формах `postgres://`, `postgresql://` и `postgresql+psycopg://` поддерживается. Собственный Caddy на Railway не нужен.
+
+1. Подключить аккаунт Railway, создать проект и PostgreSQL с постоянным volume.
+2. Создать сервис приложения из этого проекта, настроить публичный HTTPS-домен на порт приложения.
+3. В Variables приложения задать `APP_ENV=production`, reference `DATABASE_URL` на PostgreSQL, `PUBLIC_BASE_URL` на полученный HTTPS-домен, `CRM_USERNAME`, `CRM_PASSWORD`, `APP_SECRET`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`. Секретные значения вводить как Variables, не как файлы репозитория.
+4. Развернуть приложение, дождаться успешного healthcheck. Затем выполнить внутри сервиса `python -m scripts.setup_webhook`.
+5. Выполнить реальную production-приёмку ниже и обновить TEST_REPORT. Наличие railway.json само по себе не означает успешный деплой.
+
+Официальные инструкции: https://docs.railway.com/guides/fastapi и https://docs.railway.com/databases/postgresql.
+
+## Альтернатива: сервер + Docker Compose
 
 Нужны Linux-сервер с Docker Compose, постоянный диск, домен с DNS на этот сервер и открытые 80/443. DNS и выпуск сертификата должны быть готовы до настройки webhook. Это выбранный простой путь деплоя; конфигурация подготовлена, но в текущем окружении Docker не запускался.
 
