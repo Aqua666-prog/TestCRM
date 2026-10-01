@@ -14,7 +14,7 @@ from .db import Base, database
 from .leads import LeadInput, create_lead, list_leads
 from .models import Lead, Tag
 from .security import csrf_token, check_csrf
-from .telegram import router as telegram_router
+from .telegram import router as telegram_router, lock_intake
 
 ROOT = Path(__file__).parent
 
@@ -91,6 +91,33 @@ def create_app(settings=None, sender=None):
         create_lead(db, data)
         db.commit()
         return RedirectResponse('/?notice=created', status_code=303)
+
+    @app.post('/tags', dependencies=[Depends(authenticate)])
+    def new_tag(request: Request, name: str = Form(''), csrf: str = Form(''), db=Depends(get_db)):
+        check_csrf(settings.app_secret, csrf)
+        name = ' '.join(name.split()).casefold()
+        if not name or len(name) > 40:
+            return page(request, db, error='Название тега: от 1 до 40 символов.', status=422)
+        lock_intake(db)
+        if db.scalar(select(Tag).where(Tag.name == name)) is None:
+            db.add(Tag(name=name))
+        db.commit()
+        return RedirectResponse('/?notice=tag-created', status_code=303)
+
+    @app.post('/leads/{lead_id}/tags', dependencies=[Depends(authenticate)])
+    def assign_tags(lead_id: int, tag_ids: list[int] = Form([]), csrf: str = Form(''), db=Depends(get_db)):
+        check_csrf(settings.app_secret, csrf)
+        lock_intake(db)
+        lead = db.get(Lead, lead_id)
+        if lead is None:
+            raise HTTPException(404, 'Заявка не найдена')
+        unique_ids = set(tag_ids)
+        selected = db.scalars(select(Tag).where(Tag.id.in_(unique_ids))).all()
+        if len(selected) != len(unique_ids):
+            raise HTTPException(422, 'Один из тегов не найден')
+        lead.tags = selected
+        db.commit()
+        return RedirectResponse('/?notice=tagged', status_code=303)
 
     return app
 
