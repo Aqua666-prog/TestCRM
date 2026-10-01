@@ -14,6 +14,7 @@ from .db import Base, database
 from .leads import LeadInput, create_lead, list_leads
 from .models import Lead, Tag
 from .security import csrf_token, check_csrf
+from .telegram import router as telegram_router
 
 ROOT = Path(__file__).parent
 
@@ -30,6 +31,7 @@ def create_app(settings=None, sender=None):
         engine.dispose()
 
     app = FastAPI(title='Agency CRM', lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
+    app.include_router(telegram_router)
     app.state.settings = settings
     app.state.sessions = sessions
     app.state.engine = engine
