@@ -2,7 +2,7 @@
 
 Дата: 2026-10-01. Проверял Codex в ChatGPT Work Mode. Среда: Python 3.12.14, зависимости зафиксированы в requirements.lock.
 
-**Текущий статус: локальные проверки успешны; production-приёмка НЕ выполнена.** Реальные Telegram, публичный HTTPS-адрес и production PostgreSQL не проверены. Без этих проверок тестовое не считается законченным.
+**Текущий статус: локальные проверки и production веб-сценарий успешны; полный Telegram end-to-end ещё НЕ выполнен.** Приложение работает на Railway/PostgreSQL по HTTPS, настоящий webhook настроен. Ожидается диалог пользователя с ботом и последующая проверка созданного лида.
 
 | Проверка | Результат |
 | --- | --- |
@@ -21,9 +21,11 @@
 | Реально запущенный Uvicorn + HTTP smoke | PASS, две заявки, два тега и фильтр; тестовый sender |
 | Python compileall | PASS |
 | Railway entry point с PORT=18081 → health → вход в CRM | PASS, локальный HTTP-сервер |
-| PostgreSQL runtime | НЕ ВЫПОЛНЕНО |
-| Docker Compose, Caddy, публичный HTTPS | НЕ ВЫПОЛНЕНО |
-| Настоящий Telegram Bot API и webhook production | НЕ ВЫПОЛНЕНО |
+| PostgreSQL runtime | PASS, production startup, health SELECT 1, ручной Lead и many-to-many теги |
+| Dockerfile, публичный HTTPS | PASS, Railway build/deploy SUCCESS, /health HTTP 200 |
+| Docker Compose, Caddy | НЕ ВЫПОЛНЕНО, альтернативный деплой |
+| Настоящий Telegram Bot API и webhook production | PASS: getMe, setWebhook, getWebhookInfo; входящие сообщения ещё ожидаются |
+| Production HTML: ручной Lead → два тега → оба фильтра → снятие тегов | PASS, Lead #1 «Приёмка MVP — вручную» |
 
 ## Метод и диагностика
 
@@ -35,11 +37,11 @@
 
 ## Заполнить после реального деплоя
 
-- CRM HTTPS URL: ещё не получен.
-- Telegram bot username: ещё не получен.
-- Дата и оператор приёмки: ещё не выполнена.
+- CRM HTTPS URL: https://agency-crm-production-7a74.up.railway.app/.
+- Telegram bot username: @t8stcrmbot.
+- Дата и оператор веб-приёмки: 2026-10-01, Codex, production HTML-формы через HTTP-клиент.
 - Реальный диалог → Lead в CRM → два тега → фильтры: ожидает проверки.
-- Ручная заявка на production: ожидает проверки.
+- Ручная заявка на production: PASS, создалась и видна в HTML CRM.
 - Сохранение данных и диалога после перезапуска production: ожидает проверки.
 - Проблемы, диагноз, исправление, повторный полный сценарий: заполнить по факту.
 
@@ -47,4 +49,8 @@
 
 ## Подготовка Railway
 
-Добавлена railway.json, адаптирован контейнерный entry point под PORT, поддержаны варианты PostgreSQL URL. После изменений повторно: 9 passed, затем успешный запуск с PORT=18081, health и авторизованный доступ к CRM. Хостинг выбран, но подключение аккаунта Railway ещё не подтверждено; сервисы не создавались, секрет бота не передавался провайдеру, webhook не настраивался.
+Адаптирован контейнерный entry point под PORT, поддержаны варианты PostgreSQL URL. После изменений повторно: 9 passed, затем успешный запуск с PORT=18081, health и авторизованный доступ к CRM. Созданы production-сервисы agency-crm и Postgres, volume, HTTPS-домен. Секрет бота сохранён как Railway Variable, отсутствует в исходниках и Git. railway.json удалён: UI Railway сообщает, что новые сервисы с 2026-08-28 не могут использовать устаревший Config-as-Code. Настройки задаются непосредственно сервису.
+
+Первый рабочий деплой: a3c0b55b-40ce-442b-87c9-e486114ac9d4, SUCCESS. Runtime: Uvicorn 0.0.0.0:8000, одна реплика, health /health. Webhook URL соответствует production endpoint.
+
+Диагностика проверок: локальный httpx не мог создать SOCKS transport; установлен socksio в рабочий venv, после этого Bot API и webhook успешно проверены. В production такой proxy environment отсутствует. Первый acceptance-скрипт не находил теги, поскольку ожидал заглавные буквы, а продукт нормализует название через casefold. Исправлено ожидание скрипта, повторный полный ручной веб-сценарий PASS. Ошибка не затрагивала сохранение тегов в приложении.
