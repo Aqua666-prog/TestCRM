@@ -1,7 +1,10 @@
 import re
+import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select, func
+from sqlalchemy.engine import make_url
+from app.db import Base
 from app.config import Settings
 from app.main import create_app
 from app.models import Lead, Tag
@@ -9,10 +12,15 @@ from app.models import Lead, Tag
 
 @pytest.fixture
 def setup(tmp_path):
-    settings = Settings(database_url='sqlite:///' + str(tmp_path / 'test.db'),
+    test_url = os.getenv('CRM_TEST_POSTGRES_URL')
+    if test_url and make_url(test_url).database != 'crm_test':
+        raise RuntimeError('PostgreSQL tests may only reset a dedicated database named crm_test')
+    settings = Settings(database_url=test_url or 'sqlite:///' + str(tmp_path / 'test.db'),
         crm_password='test-password', telegram_webhook_secret='test-webhook-secret')
     replies = []
     app = create_app(settings, sender=lambda chat, reply: replies.append((chat, reply)))
+    if test_url:
+        Base.metadata.drop_all(app.state.engine)
     with TestClient(app) as client:
         client.auth = ('admin', 'test-password')
         yield app, client, replies, settings

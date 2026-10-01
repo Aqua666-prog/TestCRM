@@ -14,7 +14,7 @@ def main():
         raise SystemExit('Synthetic webhook smoke is limited to localhost. Use a real bot in production.')
     suffix = secrets.token_hex(4)
     with httpx.Client(base_url=base, auth=(os.getenv('CRM_USERNAME', 'admin'),
-                      os.getenv('CRM_PASSWORD', 'change-me-local')), follow_redirects=True) as client:
+                      os.getenv('CRM_PASSWORD', 'change-me-local')), follow_redirects=True, trust_env=False) as client:
         def token():
             return re.search(r'name="csrf" value="([^"]+)"', client.get('/').text).group(1)
         assert client.get('/health').json() == {'status': 'ok'}
