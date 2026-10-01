@@ -1,8 +1,8 @@
-fastapi==0.135.2
-uvicorn==0.42.0
-SQLAlchemy==2.0.48
-psycopg[binary]==3.3.3
+fastapi==0.142.2
+uvicorn==0.54.0
+SQLAlchemy==2.1.1
+psycopg[binary]==3.3.6
 Jinja2==3.1.6
-python-multipart==0.0.22
-pydantic-settings==2.13.1
+python-multipart==0.0.32
+pydantic-settings==2.15.0
 httpx==0.28.1
