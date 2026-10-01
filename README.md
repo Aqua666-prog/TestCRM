@@ -35,13 +35,13 @@ python -m pytest -q
 
 ## Production: Railway (выбранный хостинг)
 
-Railway-конфигурация находится в `railway.json`: сборка Dockerfile, один процесс, health `/health`, перезапуск при сбое. `python -m app.run` слушает выделенный платформой `PORT`. PostgreSQL URL в формах `postgres://`, `postgresql://` и `postgresql+psycopg://` поддерживается. Собственный Caddy на Railway не нужен.
+Railway автоматически собирает Dockerfile. В настройках сервиса задайте команду `python -m app.run`, health `/health`, одну реплику и restart policy On Failure с 5 попытками. Config-as-Code устарел: новые сервисы с 2026-08-28 не могут подключать `railway.json`, поэтому настройки задаются через UI/API. `python -m app.run` слушает `PORT`; для этого развёртывания `PORT=8000` и target port домена тоже 8000. PostgreSQL URL в формах `postgres://`, `postgresql://` и `postgresql+psycopg://` поддерживается. Собственный Caddy на Railway не нужен.
 
 1. Подключить аккаунт Railway, создать проект и PostgreSQL с постоянным volume.
 2. Создать сервис приложения из этого проекта, настроить публичный HTTPS-домен на порт приложения.
 3. В Variables приложения задать `APP_ENV=production`, reference `DATABASE_URL` на PostgreSQL, `PUBLIC_BASE_URL` на полученный HTTPS-домен, `CRM_USERNAME`, `CRM_PASSWORD`, `APP_SECRET`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`. Секретные значения вводить как Variables, не как файлы репозитория.
 4. Развернуть приложение, дождаться успешного healthcheck. Затем выполнить внутри сервиса `python -m scripts.setup_webhook`.
-5. Выполнить реальную production-приёмку ниже и обновить TEST_REPORT. Наличие railway.json само по себе не означает успешный деплой.
+5. Выполнить реальную production-приёмку ниже и обновить TEST_REPORT. Для проверки HTML-форм можно выполнить `python -m scripts.acceptance_web --create-manual`; после настоящего диалога бота — `python -m scripts.acceptance_web --telegram-name 'Тест MVP'`. Скрипт читает credentials из environment, не отправляет искусственные Telegram updates и создаёт только явно подписанные тестовые данные.
 
 Официальные инструкции: https://docs.railway.com/guides/fastapi и https://docs.railway.com/databases/postgresql.
 
