@@ -76,8 +76,12 @@ def create_app(settings=None, sender=None):
         return {'status': 'ok'}
 
     @app.get('/', response_class=HTMLResponse, dependencies=[Depends(authenticate)])
-    def index(request: Request, tag_id: int | None = None, db=Depends(get_db)):
-        return page(request, db, tag_id=tag_id)
+    def index(request: Request, tag_id: str = '', db=Depends(get_db)):
+        try:
+            selected_tag = int(tag_id) if tag_id else None
+        except ValueError:
+            raise HTTPException(422, 'Некорректный тег') from None
+        return page(request, db, tag_id=selected_tag)
 
     @app.post('/leads', dependencies=[Depends(authenticate)])
     def manual(request: Request, name: str = Form(''), contact: str = Form(''),
