@@ -52,7 +52,7 @@ def main():
             article = re.search(r'<article[^>]*id="lead-' + target_id + r'".*?</article>', page(), re.S).group(0)
             assert '<span class="source">Telegram</span>' in article
             assert 'test@example.com' in article and 'Нужен сайт для агентства' in article
-        tag_names = ['Приёмка MVP', 'Тестирование']
+        tag_names = ['приёмка mvp', 'тестирование']
         for name in tag_names:
             if not re.search(r'<option value="\d+"[^>]*>' + re.escape(name) + '</option>', page()):
                 client.post('/tags', data={'csrf': csrf(), 'name': name}).raise_for_status()
